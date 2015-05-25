@@ -1,0 +1,5 @@
+Apache Avro Build Instructions
+
+mvn clean
+mvn test
+mvn install
