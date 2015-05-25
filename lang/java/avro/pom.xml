@@ -23,7 +23,7 @@
   <parent>
     <artifactId>avro-parent</artifactId>
     <groupId>com.leanplum.avro</groupId>
-    <version>1.7.7-v00</version>
+    <version>1.7.7-v01</version>
     <relativePath>../</relativePath>
   </parent>
 

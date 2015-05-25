@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -329,7 +330,7 @@ public class TestDataFile {
     if (useFile) {
       File f = makeFile();
       SeekableFileInput in = new SeekableFileInput(f);
-      writer.appendTo(in, out);
+      writer.appendTo((InputStream) in, out);
     } else {
       writer.create(SCHEMA, out);
     }

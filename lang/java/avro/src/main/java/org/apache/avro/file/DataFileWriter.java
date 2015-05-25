@@ -21,9 +21,11 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilterOutputStream;
 import java.io.Flushable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -36,6 +38,7 @@ import java.util.UUID;
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileStream.DataBlock;
+import org.apache.avro.file.DataFileStream.Header;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
@@ -178,22 +181,45 @@ public class DataFileWriter<D> implements Closeable, Flushable {
 
   /** Open a writer appending to an existing file. */
   public DataFileWriter<D> appendTo(File file) throws IOException {
-    return appendTo(new SeekableFileInput(file),
+    return appendTo(new FileInputStream(file),
                     new SyncableFileOutputStream(file, true));
   }
 
   /** Open a writer appending to an existing file.
    * @param in reading the existing file.
    * @param out positioned at the end of the existing file.
+   * @deprecated use {@link #appendTo(InputStream, OutputStream) DataFileWriter} instead.
    */
+  @Deprecated
   public DataFileWriter<D> appendTo(SeekableInput in, OutputStream out)
     throws IOException {
     assertNotOpen();
-    DataFileReader<D> reader =
-      new DataFileReader<D>(in, new GenericDatumReader<D>());
-    this.schema = reader.getSchema();
-    this.sync = reader.getHeader().sync;
-    this.meta.putAll(reader.getHeader().meta);
+    DataFileReader<D> reader = new DataFileReader<D>(in, new GenericDatumReader<D>());
+    DataFileWriter<D> result = appendTo(reader.getHeader(), out);
+    reader.close();
+    return result;
+  }
+  
+  /**
+   * Open a writer appending to an existing file.
+   * 
+   * @param in reading the existing file.
+   * @param out positioned at the end of the existing file.
+   */
+  public DataFileWriter<D> appendTo(InputStream in, OutputStream out) throws IOException {
+    assertNotOpen();
+    DataFileStream<D> reader = new DataFileStream<D>(in, new GenericDatumReader<D>());
+    DataFileWriter<D> result = appendTo(reader.getHeader(), out);
+    reader.close();
+    return result;
+  }
+  
+  // TODO(boris): Expose the Header, make it serializable and the make this public.
+  private DataFileWriter<D> appendTo(Header header, OutputStream out) throws IOException {
+    assertNotOpen();
+    this.schema = header.schema;
+    this.sync = header.sync;
+    this.meta.putAll(header.meta);
     byte[] codecBytes = this.meta.get(DataFileConstants.CODEC);
     if (codecBytes != null) {
       String strCodec = new String(codecBytes, "UTF-8");
@@ -201,10 +227,8 @@ public class DataFileWriter<D> implements Closeable, Flushable {
     } else {
       this.codec = CodecFactory.nullCodec().createInstance();
     }
-    reader.close();
 
     init(out);
-
     return this;
   }
 

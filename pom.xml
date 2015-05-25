@@ -27,7 +27,7 @@
 
   <groupId>com.leanplum.avro</groupId>
   <artifactId>avro-toplevel</artifactId>
-  <version>1.7.7-v00</version>
+  <version>1.7.7-v01</version>
   <packaging>pom</packaging>
 
   <name>Apache Avro Toplevel</name>
